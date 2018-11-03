@@ -6,16 +6,17 @@ export class MapView extends React.Component {
     super(props);
     this.state = {
       markers: [],
-      position: null,
+      position: {
+        lat: 37.8715926,
+        lng: -122.272747
+      },
     }
     this.fetchPlaces = this.fetchPlaces.bind(this);
   }
 
-
   fetchPlaces(mapProps, map) {
     this.map = map;
     const { locations } = mapProps;
-    console.log(locations);
     const markers = [];
     for (var i = 0; i < locations.length; i++) {
       var marker = <Marker
@@ -45,14 +46,12 @@ export class MapView extends React.Component {
     const { google } = this.props;
     const map = this.map;
 
-    console.log('render???', google, map);
     if (!google || !map) return;
 
     const autocomplete = new google.maps.places.Autocomplete(this.autocomplete);
     autocomplete.bindTo('bounds', map);
 
     autocomplete.addListener('place_changed', () => {
-      console.log('changed');
       const place = autocomplete.getPlace();
 
       if (!place.geometry) return;
@@ -63,7 +62,10 @@ export class MapView extends React.Component {
         map.setZoom(17);
       }
 
-      this.setState({ position: place.geometry.location });
+      this.setState({ position: {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      }});
     });
   }
 
@@ -87,18 +89,24 @@ export class MapView extends React.Component {
           </form>
 
           <div>
-            <div>Lat: {position && position.lat()}</div>
-            <div>Lng: {position && position.lng()}</div>
+            <div>Lat: {position && position.lat}</div>
+            <div>Lng: {position && position.lng}</div>
           </div>
         </div>
         <Map
-          {...this.props}
           google={this.props.google}
-          initialCenter={this.props.center}
-          zoom={14}
+          initialCenter={{
+            lat: 37.8715926,
+            lng: -122.272747
+          }}
+          center={this.state.position}
+          zoom={15}
           onReady={this.fetchPlaces}
           locations={this.props.locations}
-          bounds={bounds}
+          bounds={
+            this.props.locations.length > 0 ?
+            bounds : 
+            undefined}
           containerStyle={{
             height: '100vh',
             position: 'relative',
