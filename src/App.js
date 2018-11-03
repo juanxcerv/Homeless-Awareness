@@ -5,18 +5,22 @@ import './App.css';
 class App extends Component {
   render() {
     return (
-      <MapView 
-        center={{
-        lat: 41.154885,
-        lng: -88.081807
-        }}
-        locations = {[
-          { lat: 41.154885, lng: -88.081807},
-          { lat: 41.24885, lng: -88.781807},
-          { lat: 41.454885, lng: -88.181807},
-          { lat: 41.554885, lng: -88.21807}
-        ]}
-        />
+      <div>
+        <div>
+          <MapView 
+            center={{
+            lat: 41.154885,
+            lng: -88.081807
+            }}
+            locations = {[
+              { lat: 41.154885, lng: -88.081807},
+              { lat: 41.24885, lng: -88.781807},
+              { lat: 41.454885, lng: -88.181807},
+              { lat: 41.554885, lng: -88.21807}
+            ]}
+            />
+        </div>
+      </div>
     );
   }
 }
