@@ -33,16 +33,23 @@ export class MapView extends React.Component {
       bounds.extend(this.props.locations[i]);
     }
     return (
-      <Map 
-        google={this.props.google} 
-        initialCenter = {this.props.center} 
-        zoom={14} 
-        onReady={this.fetchPlaces}
-        locations={this.props.locations}
-        bounds={bounds}
-      >
-        {this.state.markers} 
-      </Map>
+      <div>
+        <Map 
+          google={this.props.google} 
+          initialCenter = {this.props.center} 
+          zoom={14} 
+          onReady={this.fetchPlaces}
+          locations={this.props.locations}
+          bounds={bounds}
+          containerStyle={{
+            height: '100vh',
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {this.state.markers} 
+        </Map>
+      </div>
     );
   }
 }
