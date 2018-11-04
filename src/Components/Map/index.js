@@ -21,11 +21,14 @@ export class MapView extends React.Component {
       let location = formState.location;
       location = location.lat.toString().replace('.', '_') + ' ' + location.lng.toString().replace('.', '_');
       console.log('location is:', location);
-      base.post('/locations/'+location, {
+      return base.post('/locations/'+location, {
         data: { personKey }
-      }).then(locLocation => {
-        console.log('added loc at:', locLocation);
-      })
+      });
+    }).then(locLocation => {
+      let location = formState.location;
+      location = location.lat.toString().replace('.', '_') + ' ' + location.lng.toString().replace('.', '_');
+      console.log('added loc at:', locLocation);
+      console.log('before:', location);
     }).catch(err => {
       console.log(err);
     });
@@ -56,10 +59,15 @@ export class MapView extends React.Component {
   // locToString(locObj) {
   //   return locObj.lat.toString() + ' ' + locObj.lng.toString();
   // }
-  // strToLoc = str => {
-  //   const { lat, lng } = str.split(' ')
-  //   return {lat, lng};
-  // }
+  strToLoc = str => {
+    console.log('srtr', str);
+    const location  = str.split(' ');
+    
+    return {
+      lat: parseFloat(location[0].replace('_', '.')),
+      lng: parseFloat(location[1].replace('_', '.'))
+    };
+  }
 
   setUpMap(mapProps, map) {
     this.map = map;
@@ -106,6 +114,8 @@ export class MapView extends React.Component {
         asArray: true,
         then(data){
           console.log(data);
+          const loc = data[0].key;
+          console.log('unhashed: ', this.strToLoc(loc));
           //call on a function that only gets 20 closest from all locations returned here.
         }
       });
