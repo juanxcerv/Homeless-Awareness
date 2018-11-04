@@ -3,6 +3,7 @@ import { Map, Marker, GoogleApiWrapper } from 'google-maps-react';
 import geolib from 'geolib';
 import base from '../../rebase';
 import Modal from '../Modal/';
+import PersonModal from '../PersonModal/'
 
 export class MapView extends React.Component {
   constructor(props) {
@@ -10,11 +11,13 @@ export class MapView extends React.Component {
     this.state = {
       locations: [],
       people: [],
-      position: {
-      },
+      position: {},
+      selectedPerson: null,
     }
     this.setUpMap = this.setUpMap.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.onMarkerClick = this.onMarkerClick.bind(this);
+    this.closePersonInfo = this.closePersonInfo.bind(this);
   }
   handleSubmit(formState) {
     let immediatelyAvailableReference = base.push('people', {
@@ -23,15 +26,12 @@ export class MapView extends React.Component {
       let personKey = newLocation.key;
       let location = formState.location;
       location = location.lat.toString().replace('.', '_') + ' ' + location.lng.toString().replace('.', '_');
-      console.log('location is:', location);
       return base.post('/locations/'+location, {
         data: { personKey }
       });
     }).then(locLocation => {
       let location = formState.location;
       location = location.lat.toString().replace('.', '_') + ' ' + location.lng.toString().replace('.', '_');
-      console.log('added loc at:', locLocation);
-      console.log('before:', location);
     }).catch(err => {
       console.log(err);
     });
@@ -47,28 +47,7 @@ export class MapView extends React.Component {
     
     //available immediately, you don't have to wait for the Promise to resolve
     // var generatedKey = immediatelyAvailableReference.key;
-    console.log(immediatelyAvailableReference.key);
   }
-
-  // addPerson(formState) {
-  //   let immediatelyAvailableReference = base.push('people', {
-  //     data: { ...formState }
-  //   }).then(newLocation => {
-  //     let personKey = newLocation.key;
-  //     let location = this.locToString(formState.location);
-  //     base.push(`locations/${location}`, {
-  //       data: { personKey }
-  //     }).then(locLocation => {
-  //       console.log('added loc at:', locLocation);
-  //     })
-  //   }).catch(err => {
-  //     console.log(err);
-  //   });
-  //   //available immediately, you don't have to wait for the Promise to resolve
-  //   // var generatedKey = immediatelyAvailableReference.key;
-  //   console.log(immediatelyAvailableReference.key);
-  // }
-
   locToString = locObj => {
     return locObj.lat.toString().replace('.', '_') + ' ' + locObj.lng.toString().replace('.', '_');
   }
@@ -83,7 +62,6 @@ export class MapView extends React.Component {
   }
 
   getAllLocations(data) {
-    console.log(data);
     const allLocs = [];
     for (let i = 0; i < data.length; i++) {
       allLocs.push({
@@ -157,7 +135,6 @@ export class MapView extends React.Component {
             longitude: place.geometry.location.lng()
           };
           proximity_locations = this.sortDistances(currLocation, this.getAllLocations(data));
-          console.log('prox', proximity_locations);
           this.fetchPeople(proximity_locations)
             .then(peopleData => {
               //call on a function that only gets 20 closest from all locations returned here.
@@ -191,26 +168,38 @@ export class MapView extends React.Component {
     }
     return Promise.all(calls);
   }
-
+  onMarkerClick = (props, marker, e) => {
+    console.log('marker', marker);
+    console.log(props);
+    console.log(e);
+    this.setState({
+      selectedPerson: props.person,
+    });
+  };
+  closePersonInfo = () => {
+    console.log('OH DADDY');
+    this.setState({
+      selectedPerson: null,
+    });
+  };
   render() {
     const { position } = this.state;
-    var bounds = new this.props.google.maps.LatLngBounds();
-    for (var i = 0; i < this.state.locations.length; i++) {
-      console.log(this.state.locations[i])
-      // bounds.extend(this.state.locations[i]);
-    }
     var markers = [];
-    for (var i = 0; i < this.state.locations.length; i++) {
+    for (var i = 0; i < this.state.people.length; i++) {
       var marker = <Marker
-      title={'The marker`s title will appear as a tooltip.'}
-      name={'SOMA'}
-      position={this.state.locations[i]}
+      onClick={this.onMarkerClick}
+      position={this.state.people[i].location}
+      person = {this.state.people[i]}
       key={i}
       />  
     markers.push(marker);
     }
     return (
       <div className='app'>
+        <PersonModal 
+          person={this.state.selectedPerson}
+          closePersonInfo={this.closePersonInfo}
+        />
         <div className='sidebar'>
           <Modal 
             google={this.props.google}
@@ -241,10 +230,6 @@ export class MapView extends React.Component {
           center={this.state.position}
           zoom={15}
           onReady={this.setUpMap}
-          bounds={
-            this.props.locations.length > 0 ?
-            bounds : 
-            undefined}
           containerStyle={{
             height: '100vh',
             position: 'relative',
