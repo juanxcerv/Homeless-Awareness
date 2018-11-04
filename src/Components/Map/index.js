@@ -77,11 +77,14 @@ export class MapView extends React.Component {
     const ordered = geolib.orderByDistance(center, others);
     for (let i = 0; i < ordered.length; i++) {
       const index = parseInt(ordered[i].key);
-      positions.push({
-        lat: others[index].latitude,
-        lng: others[index].longitude,
-        personKey: others[index].personKey
-      });
+      const distance = ordered[i].distance;
+      if (distance < 1000) {
+        positions.push({
+          lat: others[index].latitude,
+          lng: others[index].longitude,
+          personKey: others[index].personKey
+        });
+      }
     }
     return positions;
   }
@@ -169,15 +172,11 @@ export class MapView extends React.Component {
     return Promise.all(calls);
   }
   onMarkerClick = (props, marker, e) => {
-    console.log('marker', marker);
-    console.log(props);
-    console.log(e);
     this.setState({
       selectedPerson: props.person,
     });
   };
   closePersonInfo = () => {
-    console.log('OH DADDY');
     this.setState({
       selectedPerson: null,
     });
