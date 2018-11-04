@@ -1,5 +1,6 @@
 import React from 'react';
 import { Map, Marker, GoogleApiWrapper } from 'google-maps-react';
+import geolib from 'geolib';
 import base from '../../rebase';
 import Modal from '../Modal/';
 
@@ -64,9 +65,30 @@ export class MapView extends React.Component {
     const location  = str.split(' ');
     
     return {
-      lat: parseFloat(location[0].replace('_', '.')),
-      lng: parseFloat(location[1].replace('_', '.'))
+      latitude: parseFloat(location[0].replace('_', '.')),
+      longitude: parseFloat(location[1].replace('_', '.'))
     };
+  }
+
+  getAllLocations(data) {
+    const allLocs = [];
+    for (let i = 0; i < data.length; i++) {
+      allLocs.push(this.strToLoc(data[i].key));
+    }
+    return allLocs;
+  }
+
+  sortDistances(center, others) {
+    let positions = [];
+    const ordered = geolib.orderByDistance(center, others);
+    for (let i = 0; i < ordered.length; i++) {
+      const index = parseInt(ordered[i].key);
+      positions.push({
+        lat: others[index].latitude,
+        lng: others[index].longitude
+      });
+    }
+    return positions;
   }
 
   setUpMap(mapProps, map) {
@@ -113,19 +135,20 @@ export class MapView extends React.Component {
         context: this,
         asArray: true,
         then(data){
-          console.log(data);
-          const loc = data[0].key;
-          console.log('unhashed: ', this.strToLoc(loc));
+          const currLocation = {
+            latitude: place.geometry.location.lat(),
+            longitude: place.geometry.location.lng()
+          };
+          proximity_locations = this.sortDistances(currLocation, this.getAllLocations(data));
+          console.log('prox', proximity_locations);
           //call on a function that only gets 20 closest from all locations returned here.
-        }
-      });
-      this.setState({ 
-        position: {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        },
-        locations: {
-          proximity_locations,
+          this.setState({ 
+            position: {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng(),
+            },
+            locations: proximity_locations,
+          });
         }
       });
     });
@@ -135,7 +158,8 @@ export class MapView extends React.Component {
     const { position } = this.state;
     var bounds = new this.props.google.maps.LatLngBounds();
     for (var i = 0; i < this.state.locations.length; i++) {
-      bounds.extend(this.state.locations[i]);
+      console.log(this.state.locations[i])
+      // bounds.extend(this.state.locations[i]);
     }
     var markers = [];
     for (var i = 0; i < this.state.locations.length; i++) {
