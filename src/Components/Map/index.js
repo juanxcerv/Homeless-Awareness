@@ -13,6 +13,7 @@ export class MapView extends React.Component {
       },
     }
     this.setUpMap = this.setUpMap.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
   handleSubmit(formState) {
     let immediatelyAvailableReference = base.push('people', {
@@ -33,6 +34,16 @@ export class MapView extends React.Component {
     }).catch(err => {
       console.log(err);
     });
+    let newLoc = {
+      lat: formState.location.lat,
+      lng: formState.location.lng
+    }
+    this.setState({
+      position: newLoc,
+      locations: [newLoc]
+    });
+    //TODO get neighbors of new node
+    
     //available immediately, you don't have to wait for the Promise to resolve
     // var generatedKey = immediatelyAvailableReference.key;
     console.log(immediatelyAvailableReference.key);

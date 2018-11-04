@@ -25,7 +25,8 @@ class FormExampleFieldControlId extends Component {
     this.setState({ [name]: value })
   }
 
-  handleSubmit() {
+  handleSubmit(e) {
+    e.preventDefault();
     // Sends form values to map component
     this.props.handleSubmit(this.state);
     // Closes the form modal
