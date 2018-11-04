@@ -9,6 +9,7 @@ export class MapView extends React.Component {
     super(props);
     this.state = {
       locations: [],
+      people: [],
       position: {
       },
     }
@@ -57,9 +58,9 @@ export class MapView extends React.Component {
   //   console.log(immediatelyAvailableReference.key);
   // }
 
-  // locToString(locObj) {
-  //   return locObj.lat.toString() + ' ' + locObj.lng.toString();
-  // }
+  locToString = locObj => {
+    return locObj.lat.toString().replace('.', '_') + ' ' + locObj.lng.toString().replace('.', '_');
+  }
   strToLoc = str => {
     console.log('srtr', str);
     const location  = str.split(' ');
@@ -71,9 +72,13 @@ export class MapView extends React.Component {
   }
 
   getAllLocations(data) {
+    console.log(data);
     const allLocs = [];
     for (let i = 0; i < data.length; i++) {
-      allLocs.push(this.strToLoc(data[i].key));
+      allLocs.push({
+        ...this.strToLoc(data[i].key),
+        personKey: data[i].personKey,
+      });
     }
     return allLocs;
   }
@@ -85,7 +90,8 @@ export class MapView extends React.Component {
       const index = parseInt(ordered[i].key);
       positions.push({
         lat: others[index].latitude,
-        lng: others[index].longitude
+        lng: others[index].longitude,
+        personKey: others[index].personKey
       });
     }
     return positions;
@@ -141,17 +147,38 @@ export class MapView extends React.Component {
           };
           proximity_locations = this.sortDistances(currLocation, this.getAllLocations(data));
           console.log('prox', proximity_locations);
-          //call on a function that only gets 20 closest from all locations returned here.
-          this.setState({ 
-            position: {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-            },
-            locations: proximity_locations,
-          });
+          this.fetchPeople(proximity_locations)
+            .then(peopleData => {
+              //call on a function that only gets 20 closest from all locations returned here.
+              this.setState({ 
+                position: {
+                  lat: place.geometry.location.lat(),
+                  lng: place.geometry.location.lng(),
+                },
+                locations: proximity_locations,
+                people: peopleData,
+              });
+            }).catch(peopleError => {
+              console.log('Error fetching people results:', peopleError);
+            });
         }
       });
     });
+  }
+
+  findPerson(personKey) {
+    return base.fetch('people/' + personKey, {
+      context: this,
+    });
+  }
+
+  fetchPeople(locations) {
+    let calls = [];
+    for (let i = 0; i < locations.length; i++) {
+      const personKey = locations[i].personKey;
+      calls.push(this.findPerson(personKey));
+    }
+    return Promise.all(calls);
   }
 
   render() {
