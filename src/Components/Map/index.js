@@ -1,33 +1,24 @@
 import React from 'react';
 import { Map, InfoWindow, Marker, GoogleApiWrapper } from 'google-maps-react';
+import base from '../../rebase';
 
 export class MapView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      markers: [],
+      locations: [],
       position: {
-        lat: 37.8715926,
-        lng: -122.272747
       },
     }
-    this.fetchPlaces = this.fetchPlaces.bind(this);
+    this.setUpMap = this.setUpMap.bind(this);
   }
 
-  fetchPlaces(mapProps, map) {
+  setUpMap(mapProps, map) {
     this.map = map;
-    const { locations } = mapProps;
-    const markers = [];
-    for (var i = 0; i < locations.length; i++) {
-      var marker = <Marker
-        title={'The marker`s title will appear as a tooltip.'}
-        name={'SOMA'}
-        position={locations[i]}
-        key={i}
-      />
-      markers.push(marker);
-    }
-    this.setState({ markers })
+    this.setState({position: {
+      lat: 37.8715926,
+      lng: -122.272747
+    }})
   }
 
   componentDidMount() {
@@ -55,25 +46,48 @@ export class MapView extends React.Component {
       const place = autocomplete.getPlace();
 
       if (!place.geometry) return;
-
       if (place.geometry.viewport) map.fitBounds(place.geometry.viewport);
       else {
         map.setCenter(place.geometry.location);
         map.setZoom(17);
       }
-
-      this.setState({ position: {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      }});
+      //need to get a list of locations from firebase and set state to those
+      var proximity_locations = []
+      base.fetch('locations', {
+        context: this,
+        asArray: true,
+        then(data){
+          console.log(data);
+          //call on a function that only gets 20 closest from all locations returned here.
+        }
+      });
+      this.setState({ 
+        position: {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        },
+        locations: {
+          proximity_locations,
+        }
+      });
     });
   }
 
   render() {
     const { position } = this.state;
     var bounds = new this.props.google.maps.LatLngBounds();
-    for (var i = 0; i < this.props.locations.length; i++) {
-      bounds.extend(this.props.locations[i]);
+    for (var i = 0; i < this.state.locations.length; i++) {
+      bounds.extend(this.state.locations[i]);
+    }
+    var markers = [];
+    for (var i = 0; i < this.state.locations.length; i++) {
+      var marker = <Marker
+      title={'The marker`s title will appear as a tooltip.'}
+      name={'SOMA'}
+      position={this.state.locations[i]}
+      key={i}
+      />  
+    markers.push(marker);
     }
     return (
       <div className='app'>
@@ -101,8 +115,7 @@ export class MapView extends React.Component {
           }}
           center={this.state.position}
           zoom={15}
-          onReady={this.fetchPlaces}
-          locations={this.props.locations}
+          onReady={this.setUpMap}
           bounds={
             this.props.locations.length > 0 ?
             bounds : 
@@ -114,7 +127,7 @@ export class MapView extends React.Component {
           }}
           className='map'
         >
-          {this.state.markers}
+          {markers}
         </Map>
       </div>
     );
