@@ -1,15 +1,68 @@
 import React from 'react';
-import { Map, InfoWindow, Marker, GoogleApiWrapper } from 'google-maps-react';
+import { Map, Marker, GoogleApiWrapper } from 'google-maps-react';
+import base from '../../rebase';
+import Modal from '../Modal/';
 
 export class MapView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       markers: [],
-      position: null,
-    }
+      position: {
+        lat: 41.154885,
+        lng: -88.081807,
+      }
+    };
     this.fetchPlaces = this.fetchPlaces.bind(this);
+    // this.addPerson = this.addPerson.bind(this);
   }
+  handleSubmit(formState) {
+    let immediatelyAvailableReference = base.push('people', {
+      data: { ...formState }
+    }).then(newLocation => {
+      let personKey = newLocation.key;
+      let location = formState.location;
+      location = location.lat.toString().replace('.', '_') + ' ' + location.lng.toString().replace('.', '_');
+      console.log('location is:', location);
+      base.post('/locations/'+location, {
+        data: { personKey }
+      }).then(locLocation => {
+        console.log('added loc at:', locLocation);
+      })
+    }).catch(err => {
+      console.log(err);
+    });
+    //available immediately, you don't have to wait for the Promise to resolve
+    // var generatedKey = immediatelyAvailableReference.key;
+    console.log(immediatelyAvailableReference.key);
+  }
+
+  // addPerson(formState) {
+  //   let immediatelyAvailableReference = base.push('people', {
+  //     data: { ...formState }
+  //   }).then(newLocation => {
+  //     let personKey = newLocation.key;
+  //     let location = this.locToString(formState.location);
+  //     base.push(`locations/${location}`, {
+  //       data: { personKey }
+  //     }).then(locLocation => {
+  //       console.log('added loc at:', locLocation);
+  //     })
+  //   }).catch(err => {
+  //     console.log(err);
+  //   });
+  //   //available immediately, you don't have to wait for the Promise to resolve
+  //   // var generatedKey = immediatelyAvailableReference.key;
+  //   console.log(immediatelyAvailableReference.key);
+  // }
+
+  // locToString(locObj) {
+  //   return locObj.lat.toString() + ' ' + locObj.lng.toString();
+  // }
+  // strToLoc = str => {
+  //   const { lat, lng } = str.split(' ')
+  //   return {lat, lng};
+  // }
 
 
   fetchPlaces(mapProps, map) {
@@ -19,7 +72,7 @@ export class MapView extends React.Component {
     const markers = [];
     for (var i = 0; i < locations.length; i++) {
       var marker = <Marker
-        title={'The marker`s title will appear as a tooltip.'}
+        title={'The markers title will appear as a tooltip.'}
         name={'SOMA'}
         position={locations[i]}
         key={i}
@@ -45,7 +98,6 @@ export class MapView extends React.Component {
     const { google } = this.props;
     const map = this.map;
 
-    console.log('render???', google, map);
     if (!google || !map) return;
 
     const autocomplete = new google.maps.places.Autocomplete(this.autocomplete);
@@ -63,7 +115,10 @@ export class MapView extends React.Component {
         map.setZoom(17);
       }
 
-      this.setState({ position: place.geometry.location });
+      this.setState({ position: {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      } });
     });
   }
 
@@ -76,6 +131,11 @@ export class MapView extends React.Component {
     return (
       <div className='app'>
         <div className='sidebar'>
+          <Modal 
+            google={this.props.google}
+            map={this.map}
+            handleSubmit={this.handleSubmit}
+          />
           <form onSubmit={this.onSubmit}>
             <input
               placeholder="Enter a location"
@@ -87,14 +147,14 @@ export class MapView extends React.Component {
           </form>
 
           <div>
-            <div>Lat: {position && position.lat()}</div>
-            <div>Lng: {position && position.lng()}</div>
+            <div>Lat: {position && position.lat}</div>
+            <div>Lng: {position && position.lng}</div>
           </div>
         </div>
         <Map
           {...this.props}
           google={this.props.google}
-          initialCenter={this.props.center}
+          initialCenter={this.state.positi}
           zoom={14}
           onReady={this.fetchPlaces}
           locations={this.props.locations}

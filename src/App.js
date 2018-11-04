@@ -8,10 +8,6 @@ class App extends Component {
       <div>
         <div>
           <MapView 
-            center={{
-            lat: 41.154885,
-            lng: -88.081807
-            }}
             locations = {[
               { lat: 41.154885, lng: -88.081807},
               { lat: 41.24885, lng: -88.781807},
